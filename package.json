@@ -4,8 +4,8 @@
   "main": "otpSender.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon otpSender.js",
-    "start": "node otpSender.js"
+    "dev": "nodemon test.js",
+    "start": "node test.js"
   },
   "keywords": [],
   "author": "",
