@@ -240,6 +240,8 @@ class OTPSender {
     }
 
     async initCluster(concurrentBrowsers) {
+        const isVPS = process.env.IS_VPS === 'true';
+
         this.cluster = await Cluster.launch({
             concurrency: Cluster.CONCURRENCY_CONTEXT,
             maxConcurrency: concurrentBrowsers,
@@ -248,85 +250,26 @@ class OTPSender {
             args: this.proxies.length > 0 ? [`--proxy-server=http://${this.getNextProxy()}`] : [],
             puppeteerOptions: {
                 executablePath: this.getChromePath(),
-                headless: false,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                headless: isVPS ? 'new' : false,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    // '--disable-dev-shm-usage',
+                    // '--disable-gpu',
+                    // '--no-zygote',
+                    // '--single-process',
+                    // '--disable-features=IsolateOrigins,site-per-process',
+                    // ...(isVPS ? [
+                    //     '--disable-software-rasterizer',
+                    //     '--disable-extensions',
+                    //     '--window-size=1920,1080'
+                    // ] : []),
+                ],
             },
-            retryLimit: 2,
-            retryDelay: 1000
+            timeout: 180000,
+            retryLimit: 3,
+            retryDelay: 5000,
         });
-
-        // await this.cluster.task(async ({ page, data: phoneNumber }) => {
-            
-        //     try {
-        //         // const formattedNumber = phoneNumber.replace(/\s+/g, '').replace(/\D/g, '');
-        //         const formattedNumber = phoneNumber;
-        //         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-                
-        //         // Log the request with proxy information
-        //         page.on('request', request => {
-        //             // console.log(`Request to ${request.url()} with proxy: ${proxy || 'No proxy'}`);
-        //         });
-
-        //         try {
-        //             await page.goto('https://1xlite-506423.top/en/registration', {
-        //                 waitUntil: 'networkidle0',
-        //                 timeout: 30000
-        //             });
-        //         } catch (error) {
-        //             throw new Error(`Navigation failed: ${error.message} (Proxy: ${rawProxy || 'No proxy'})`);
-        //         }
-
-              
-        //         try {
-        //             await page.waitForSelector('input[type="tel"]', { timeout: 30000 });
-        //             await page.type('input[type="tel"]', formattedNumber);
-        //         } catch (error) {
-        //             throw new Error(`Phone input failed: ${error.message}`);
-        //         }
-
-        //         // Wait for and click button
-        //         try {
-        //             const buttonSelector = 'button.ui-button.registration-field-phone-with-country-actions.ui-button--size-m.ui-button--theme-primary.ui-button--narrow.ui-button--rounded.registration-field-phone-with-country__send';
-        //             await page.waitForSelector(buttonSelector, { visible: true, timeout: 30000 });
-        //             await page.click(buttonSelector);
-        //         } catch (error) {
-        //             throw new Error(`Button click failed: ${error.message}`);
-        //         }
-
-        //         // Verify OTP was sent (look for success message or element)
-        //         try {
-        //             const successSelector = '.ui-status-icon.ui-popup__icon.ui-status-icon--status-success.ui-status-icon--size-l';
-        //             await page.waitForSelector(successSelector, { 
-        //                 visible: true, 
-        //                 timeout: 5000 
-        //             });
-        //             console.log(`✓ OTP sent successfully to ${phoneNumber}`);
-        //         } catch (error) {
-        //             await new Promise(resolve => setTimeout(resolve, 2000));
-        //             throw new Error('Could not verify OTP was sent');
-        //         }
-
-        //         // Wait before closing
-        //         await new Promise(resolve => setTimeout(resolve, 2000));
-
-        //     } catch (error) {
-        //         console.error(`Failed processing ${phoneNumber} with proxy: ${rawProxy || 'No proxy'}`);
-        //         console.error(`Error: ${error.message}`);
-                
-        //         if (error.message.includes('Navigation failed')) {
-        //             console.log(`Will retry with different proxy (Current: ${rawProxy || 'No proxy'})...`);
-        //             throw error;
-        //         }
-
-        //         throw error;
-        //     } finally {
-        //         try {
-        //             await page.close();
-        //         } catch (e) {
-        //             console.error('Error closing page:', e);
-        //         }
-        //     }
-        // });
 
         this.cluster.task(async ({ page, data: phoneNumber }) => {
             const proxy = this.config.useProxy ? this.getNextProxy() : null;
@@ -396,41 +339,7 @@ class OTPSender {
             await this.initCluster(userConfig.concurrentBrowsers);
             console.log(`Starting with ${userConfig.concurrentBrowsers} parallel browsers, Proxy: ${this.config.useProxy ? 'Yes' : 'No'}`);
 
-            // while (true) {
-            //     const phoneNumbers = await fs.readFile(this.config.phoneNumbersFile, 'utf8');
-            //     const numbers = phoneNumbers.split('\n')
-            //         .filter(num => num.trim())
-            //         .map(num => num.trim());
-
-            //     if (numbers.length > 0) {
-            //         console.log(`Processing ${numbers.length} numbers...`);
-                    
-            //         // Queue all numbers for processing
-            //         await Promise.all(numbers.map(number => 
-            //             this.cluster.queue(number)
-            //         ));
-            //     }
-
-            //     const rl = readline.createInterface({
-            //         input: process.stdin,
-            //         output: process.stdout
-            //     });
-
-            //     const answer = await new Promise(resolve => {
-            //         rl.question('Continue processing numbers? (y/n): ', resolve);
-            //     });
-
-            //     rl.close();
-
-            //     if (answer.toLowerCase() !== 'y') {
-            //         console.log('Stopping the script...');
-            //         await this.cluster.close();
-            //         break;
-            //     }
-
-            //     await new Promise(resolve => setTimeout(resolve, 5000));
-            // }
-
+           
             const phoneNumbers = await fs.readFile(this.config.phoneNumbersFile, 'utf8');
             const numbers = phoneNumbers.split('\n').filter(num => num.trim());
 
