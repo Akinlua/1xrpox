@@ -25,13 +25,15 @@ PyInstaller.__main__.run([
     'payooner.py',
     '--onefile',
     '--name=PayoneerBot',
-    *data_files,  # Unpack the data_files list
+    '--add-data=chromedriver.exe;.',  # Include chromedriver in the build
+    *data_files,
     '--hidden-import=selenium_driverless',
     '--hidden-import=selenium',
     '--hidden-import=dotenv',
     '--hidden-import=twocaptcha',
     '--hidden-import=asyncio'
 ])
+
 
 # After building, copy the files to dist folder
 print("Copying required files to dist folder...")

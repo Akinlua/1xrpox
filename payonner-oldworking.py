@@ -34,6 +34,7 @@ class OTPSender:
         }
         self.proxies = []
         self.current_proxy_index = 0
+        self.solver = TwoCaptcha('b2f661fd6f5a3a94d05900a8439c65bd')
 
     def get_resource_path(self, relative_path):
         return os.path.join(os.getcwd(), relative_path)
@@ -387,7 +388,7 @@ class OTPSender:
             send_button = await driver.find_element(By.CSS_SELECTOR, '#lnkSendCodeArkose', timeout=1200)
             await send_button.click()
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(10)
 
 
             print(f"✓ OTP sent successfully to {phone_number}")
@@ -442,7 +443,6 @@ class OTPSender:
         return proxy
 
     async def process_phone_number(self, phone_number):
-        print(f"Processing {phone_number}")
         retries = 3
         while retries > 0:
             driver = None
@@ -516,57 +516,21 @@ class OTPSender:
             # Get user configuration
             user_config = self.get_user_config()
             self.config['use_proxy'] = user_config['use_proxy']
-            concurrent_browsers = user_config['concurrent_browsers']
             
             # Load proxies if enabled
             if self.config['use_proxy']:
                 self.load_proxies()
-                if len(self.proxies) < concurrent_browsers:
-                    self.show_error(f"Not enough proxies! Need at least {concurrent_browsers} unique proxies for concurrent browsers.")
-                    return
             
             # Read phone numbers
             with open(self.config['phone_numbers_file'], 'r') as f:
                 phone_numbers = [line.strip() for line in f if line.strip()]
 
             if phone_numbers:
-                print(f"Processing {len(phone_numbers)} numbers with {concurrent_browsers} concurrent browsers...")
-                
-                # Process phone numbers in batches based on concurrent_browsers
+                print(f"Processing {len(phone_numbers)} numbers...")
                 loop = asyncio.get_event_loop()
-                for i in range(0, len(phone_numbers), concurrent_browsers):
-                    batch = phone_numbers[i:i + concurrent_browsers]
-                    print(f"\nProcessing batch of {len(batch)} numbers...")
-                    
-                    # Create tasks for the current batch
-                    tasks = []
-                    used_proxies = set()  # Track used proxies for this batch
-                    
-                    for phone_number in batch:
-                        if self.config['use_proxy']:
-                            # Find an unused proxy for this batch
-                            available_proxies = [p for p in self.proxies if p not in used_proxies]
-                            if not available_proxies:
-                                # If all proxies are used, reset the used_proxies set
-                                used_proxies.clear()
-                                available_proxies = self.proxies
-                            
-                            # Select and mark proxy as used
-                            selected_proxy = random.choice(available_proxies)
-                            used_proxies.add(selected_proxy)
-                            self.current_proxy_index = self.proxies.index(selected_proxy)
-                        
-                        tasks.append(self.process_phone_number(phone_number))
-                    
-                    # Run the batch concurrently
-                    loop.run_until_complete(asyncio.gather(*tasks))
-                    
-                    # Optional delay between batches
-                    if i + concurrent_browsers < len(phone_numbers):
-                        delay = random.uniform(2, 5)
-                        print(f"Waiting {delay:.1f} seconds before next batch...")
-                        time.sleep(delay)
-                
+                loop.run_until_complete(asyncio.gather(
+                    *[self.process_phone_number(phone_number) for phone_number in phone_numbers]
+                ))
                 print('All numbers processed.')
             else:
                 print('No numbers to process.')
@@ -575,22 +539,107 @@ class OTPSender:
             self.show_error(f"An error occurred: {str(e)}")
             raise e
 
+    async def natural_mouse_move(self, driver, element):
+        """Simulates natural mouse movement to an element."""
+        try:
+            # Get element position
+            rect = await element.rect
+            
+            # Calculate random offset within element bounds
+            offset_x = random.random() * (rect['width'] / 2)
+            offset_y = random.random() * (rect['height'] / 2)
+            
+            # Move to element
+            await element.hover()
+            await asyncio.sleep(random.uniform(0.1, 0.3))
+            
+        except Exception as e:
+            print(f"Mouse movement failed: {str(e)}")
 
-    # async def human_type(self, driver, element, text):
-    #     """Simulates human-like typing behavior."""
-    #     for char in text:
-    #         await element.send_keys(char)
-    #         await asyncio.sleep(random.uniform(0.03, 0.1))  # Base typing delay
+    async def human_type(self, driver, element, text):
+        """Simulates human-like typing behavior."""
+        for char in text:
+            await element.send_keys(char)
+            await asyncio.sleep(random.uniform(0.03, 0.1))  # Base typing delay
             
-    #         # Occasional longer pauses
-    #         if random.random() < 0.1:
-    #             await asyncio.sleep(random.uniform(0.1, 0.3))
+            # Occasional longer pauses
+            if random.random() < 0.1:
+                await asyncio.sleep(random.uniform(0.1, 0.3))
             
-    #         # Occasional typo and correction
-    #         if random.random() < 0.05:
-    #             await element.send_keys(Keys.BACKSPACE)
-    #             await asyncio.sleep(random.uniform(0.2, 0.4))
-    #             await element.send_keys(char)
+            # Occasional typo and correction
+            if random.random() < 0.05:
+                await element.send_keys(Keys.BACKSPACE)
+                await asyncio.sleep(random.uniform(0.2, 0.4))
+                await element.send_keys(char)
+
+    async def solve_arrow_puzzle(self, driver, max_attempts=3):
+        attempts = 0
+        
+        while attempts < max_attempts:
+            attempts += 1
+            print(f"Arrow puzzle solving attempt {attempts}/{max_attempts}")
+            
+            try:
+                wait = WebDriverWait(driver, 30)
+                
+                # Wait for the puzzle container and images
+                puzzle_container = wait.until(EC.visibility_of_element_located(
+                    (By.CSS_SELECTOR, '.puzzle-container')
+                ))
+                
+                # Find arrow buttons
+                left_arrow = wait.until(EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, '[aria-label="Move Left"]')
+                ))
+                right_arrow = wait.until(EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, '[aria-label="Move Right"]')
+                ))
+                
+                # Get the pattern image for 2captcha
+                pattern_image = driver.find_element(By.CSS_SELECTOR, '.pattern-image')
+                pattern_base64 = pattern_image.screenshot_as_base64
+                
+                # Send to 2captcha
+                response = self.solver.coordinates(
+                    image=pattern_base64,
+                    textinstructions='Match the movement pattern shown in the image'
+                )
+                
+                if not response or not response['code']:
+                    raise Exception('Failed to get solution from 2captcha')
+                
+                # Execute the movement pattern
+                for direction in response['code']:
+                    if direction == 'left':
+                        self.natural_mouse_move(driver, left_arrow)
+                        left_arrow.click()
+                    else:
+                        self.natural_mouse_move(driver, right_arrow)
+                        right_arrow.click()
+                    await asyncio.sleep(random.uniform(0.3, 0.6))
+                
+                # Click submit
+                submit_button = wait.until(EC.element_to_be_clickable(
+                    (By.CSS_SELECTOR, '.Submit')
+                ))
+                submit_button.click()
+                
+                # Check for success
+                try:
+                    success = wait.until(EC.presence_of_element_located(
+                        (By.CSS_SELECTOR, '.success-message')
+                    ))
+                    return True
+                except:
+                    continue
+                
+            except Exception as e:
+                print(f"Failed arrow puzzle attempt {attempts}:", str(e))
+                if attempts == max_attempts:
+                    raise Exception(f'Failed to solve arrow puzzle after {max_attempts} attempts')
+                await asyncio.sleep(random.uniform(2, 4))
+        
+        return False
 
     def show_error(self, message):
         """Show error message in a dialog"""

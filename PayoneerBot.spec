@@ -5,7 +5,7 @@ a = Analysis(
     ['payooner.py'],
     pathex=[],
     binaries=[],
-    datas=[('phone_numbers.txt', '.'), ('proxies.txt', '.')],
+    datas=[('chromedriver.exe', '.'), ('phone_numbers.txt', '.'), ('proxies.txt', '.')],
     hiddenimports=['selenium_driverless', 'selenium', 'dotenv', 'twocaptcha', 'asyncio'],
     hookspath=[],
     hooksconfig={},
