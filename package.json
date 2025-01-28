@@ -11,7 +11,21 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "bin": "app.js",
+  "pkg": {
+    "assets": [
+      "node_modules/**/*",
+      "phone_numbers.txt",
+      "proxies.txt",
+      ".env"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ]
+  },
   "dependencies": {
+    "2captcha-ts": "^2.3.6",
+    "dotenv": "^16.4.7",
     "nodemon": "^3.1.9",
     "puppeteer-cluster": "^0.24.0",
     "puppeteer-core": "^23.11.1"

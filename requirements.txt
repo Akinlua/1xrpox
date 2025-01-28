@@ -1,0 +1,4 @@
+selenium==4.27.1
+seleniumbase==4.33.15
+python-dotenv==1.0.1
+2captcha-python==1.5.1
