@@ -25,12 +25,9 @@ PyInstaller.__main__.run([
     'payooner.py',
     '--onefile',
     '--name=PayoneerBot',
-    '--add-data=chromedriver.exe;.',  # Include chromedriver in the build
     *data_files,
     '--hidden-import=selenium_driverless',
-    '--hidden-import=selenium',
     '--hidden-import=dotenv',
-    '--hidden-import=twocaptcha',
     '--hidden-import=asyncio'
 ])
 

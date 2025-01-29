@@ -1,17 +1,17 @@
 from selenium_driverless import webdriver
 from selenium_driverless.types.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.keys import Keys
-from twocaptcha import TwoCaptcha
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from selenium.webdriver.common.action_chains import ActionChains
+# from selenium.webdriver.common.keys import Keys
+# from twocaptcha import TwoCaptcha
 import random
 import time
 import os
 from dotenv import load_dotenv
 import json
-from concurrent.futures import ThreadPoolExecutor
-import platform
+# from concurrent.futures import ThreadPoolExecutor
+# import platform
 import sys
 import asyncio
 
@@ -385,6 +385,15 @@ class OTPSender:
 
             # Wait for and click the send code button
             send_button = await driver.find_element(By.CSS_SELECTOR, '#lnkSendCodeArkose', timeout=1200)
+
+            # Get the class attribute
+            button_class = await send_button.get_attribute('class')
+
+            # Check if button is disabled
+            if 'disabled' in button_class:
+                raise Exception("Send code button is disabled - retrying...")
+
+            # If not disabled, proceed with click
             await send_button.click()
 
             await asyncio.sleep(2)
