@@ -382,9 +382,15 @@ class OTPSender:
             )
             await phone_input.send_keys(country_code["remaining_number"])
             print(f"Entered phone number: {country_code['remaining_number']}")
-
+            await asyncio.sleep(20)
             # Wait for and click the send code button
             send_button = await driver.find_element(By.CSS_SELECTOR, '#lnkSendCodeArkose', timeout=1200)
+            # Print debug information for the send_button
+            button_class = await send_button.get_attribute('class')
+            button_text = await send_button.text
+            button_disabled = 'disabled' in button_class
+            
+            print(f"Debug Info - Send Button: Class: {button_class}, Text: '{button_text}', Disabled: {button_disabled}")
 
             # Get the class attribute
             button_class = await send_button.get_attribute('class')
