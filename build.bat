@@ -1,8 +1,8 @@
 @echo off
 echo Installing requirements...
-pip install -r requirements.txt
-pip install pyinstaller
+py -m pip install -r requirements.txt
+py -m pip install pyinstaller
 echo Building executable...
-python build.py
+py build.py
 echo Done!
 pause 

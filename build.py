@@ -10,7 +10,7 @@ system = platform.system().lower()
 # icon_path = 'app.ico' if system == 'windows' else 'app.icns'
 
 # Ensure the files exist and copy them if needed
-required_files = ['phone_numbers.txt', 'proxies.txt']
+required_files = ['phone_numbers.txt', 'proxies.txt','chromedriver.exe']
 for file in required_files:
     if not os.path.exists(file):
         # Create empty files if they don't exist
