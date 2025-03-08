@@ -14,6 +14,8 @@ import json
 # import platform
 import sys
 import asyncio
+from selenium_stealth import stealth
+
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -349,14 +351,28 @@ class OTPSender:
             button = await driver.find_element(By.CSS_SELECTOR, '#PersonalDetailsButtonArkose', timeout=1200)
             await button.click()
             print("clicked button submit")
+            # await asyncio.sleep(5)  # Give time for the form to load
+
+
+
+
+
+
+            time.sleep(1000)  # Give time for the form to load
+
+
+            
 
             # Wait for phone number form
-            await asyncio.sleep(2)  # Give time for the form to load
             phone_select = await driver.find_element(By.CSS_SELECTOR, '#AccountPhoneNumber_iso2', timeout=1200)
 
             # Click to open country code dropdown
             await phone_select.click()
             await asyncio.sleep(random.uniform(0.3, 0.7))
+
+            time.sleep(1000)  # Give time for the form to load
+
+
 
             # Select country code using JavaScript with data-display attribute
             country_code = self.detect_country(phone_number)
@@ -383,20 +399,77 @@ class OTPSender:
             await phone_input.send_keys(country_code["remaining_number"])
             print(f"Entered phone number: {country_code['remaining_number']}")
 
-            # Wait for and click the send code button
-            send_button = await driver.find_element(By.CSS_SELECTOR, '#lnkSendCodeArkose', timeout=1200)
 
-            # Get the class attribute
-            button_class = await send_button.get_attribute('class')
 
-            # Check if button is disabled
-            if 'disabled' in button_class:
-                raise Exception("Send code button is disabled - retrying...")
 
-            # If not disabled, proceed with click
-            await send_button.click()
 
+            await asyncio.sleep(2)  # Give time for the form to load
+
+          # Add wait and check element state before interacting
+            elem = await driver.find_element(By.CSS_SELECTOR, '#inputAddress', timeout=1200)
+            
+            # Debug element state
+            is_visible = await driver.execute_script("return arguments[0].offsetParent !== null;", elem)
+            is_enabled = await driver.execute_script("return !arguments[0].disabled;", elem)
+            print(f"Address input visible: {is_visible}, enabled: {is_enabled}")
+            
+            # Clear any existing value first
+            await driver.execute_script("arguments[0].value = '';", elem)
+            await asyncio.sleep(0.5)  # Small delay after clearing
+            
+            # Try multiple approaches to input the text
+            try:
+                # First attempt: direct send_keys
+                await elem.send_keys("Pakistan Brudda")
+                
+                # Verify if text was entered
+                actual_value = await driver.execute_script("return arguments[0].value;", elem)
+                if not actual_value:
+                    # Second attempt: JavaScript
+                    await driver.execute_script("""
+                        arguments[0].value = 'Pakistan Brudda';
+                        arguments[0].dispatchEvent(new Event('input'));
+                        arguments[0].dispatchEvent(new Event('change'));
+                    """, elem)
+                
+                print("Address input value:", await driver.execute_script("return arguments[0].value;", elem))
+            except Exception as e:
+                print(f"Error sending keys to address input: {str(e)}")
+                raise e
+
+            elem = await driver.find_element(By.CLASS_NAME, "inputAddressOptions_OtherAddressOption", timeout=120)
+            await elem.click()
+
+            elem = await driver.find_element(By.ID, "inputAddress", timeout=120)
+            await elem.send_keys("Pakistan Brudda")
+            
             await asyncio.sleep(2)
+
+
+            
+
+        #     # Wait for and click the send code button
+            elem = await driver.find_element(By.ID, "lnkSendCodeArkose", timeout=120)
+            
+            # Print detailed element information
+            element_html = await driver.execute_script("return arguments[0].outerHTML;", elem)
+            element_attrs = await driver.execute_script("""
+                let attrs = {};
+                for(let attr of arguments[0].attributes) {
+                    attrs[attr.name] = attr.value;
+                }
+                return attrs;
+            """, elem)
+            
+            print("Found element:")
+            print(f"HTML: {element_html}")
+            print(f"Attributes: {json.dumps(element_attrs, indent=2)}")
+            # print(f"Is displayed: {await elem.is_displayed()}")
+            # print(f"Is enabled: {await elem.is_enabled()}")
+            
+            await elem.click()
+
+            time.sleep(100)
 
 
             print(f"✓ OTP sent successfully to {phone_number}")
@@ -461,13 +534,14 @@ class OTPSender:
                 
                 # Configure driver options
                 options = webdriver.ChromeOptions()
-                # options.add_argument('--no-sandbox')
+                # options.add_argument('--start-maximized')
                 options.add_argument('--disable-dev-shm-usage')
                 options.add_argument('--disable-extensions')
                 options.add_argument('--disable-gpu')
                 options.add_argument('--disable-software-rasterizer')
                 
                 if proxy:
+                    print(f"Using proxy: {proxy}")
                     options.add_argument(f'--proxy-server={proxy}')
                 
                 # Initialize driverless Chrome with context options
