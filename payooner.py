@@ -14,6 +14,8 @@ import json
 # import platform
 import sys
 import asyncio
+from selenium_stealth import stealth
+
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -302,11 +304,11 @@ class OTPSender:
             # await self.human_type(driver, lastname, "wrkkrkee")
 
             email = await driver.find_element(By.CSS_SELECTOR, '#txtEmail', timeout=1200)
-            await email.send_keys("JackChotey@gmail.com")
+            await email.send_keys("agbooladipo624@gmail.com")
             # await self.human_type(driver, email, "akin@gmail.com")
 
             email_confirm = await driver.find_element(By.CSS_SELECTOR, '#txtRetypeEmail', timeout=120)
-            await email_confirm.send_keys("JackChotey@gmail.com")
+            await email_confirm.send_keys("agbooladipo624@gmail.com")
             # await self.human_type(driver, email_confirm, "akin@gmail.com")
 
             datetext = await driver.find_element(By.CSS_SELECTOR, '#datepicker5', timeout=1200)
@@ -349,14 +351,27 @@ class OTPSender:
             button = await driver.find_element(By.CSS_SELECTOR, '#PersonalDetailsButtonArkose', timeout=1200)
             await button.click()
             print("clicked button submit")
+            # await asyncio.sleep(5)  # Give time for the form to load
+
+
+
+
+
+
+            time.sleep(1)  # Give time for the form to load
+
+
+            
 
             # Wait for phone number form
-            await asyncio.sleep(2)  # Give time for the form to load
             phone_select = await driver.find_element(By.CSS_SELECTOR, '#AccountPhoneNumber_iso2', timeout=1200)
 
             # Click to open country code dropdown
             await phone_select.click()
             await asyncio.sleep(random.uniform(0.3, 0.7))
+
+            time.sleep(5)  # Give time for the form to load
+
 
             # Select country code using JavaScript with data-display attribute
             country_code = self.detect_country(phone_number)
@@ -373,7 +388,6 @@ class OTPSender:
             """)
             print(f"Selected country code: +{country_code['code']}")
             await asyncio.sleep(random.uniform(0.2, 0.5))
-
             # Find and fill phone number input
             phone_input = await driver.find_element(
                 By.CSS_SELECTOR, 
@@ -382,28 +396,23 @@ class OTPSender:
             )
             await phone_input.send_keys(country_code["remaining_number"])
             print(f"Entered phone number: {country_code['remaining_number']}")
-            await asyncio.sleep(20)
+            await asyncio.sleep(2)
             # Wait for and click the send code button
             send_button = await driver.find_element(By.CSS_SELECTOR, '#lnkSendCodeArkose', timeout=1200)
             # Print debug information for the send_button
             button_class = await send_button.get_attribute('class')
+
             button_text = await send_button.text
-            button_disabled = 'disabled' in button_class
-            
-            print(f"Debug Info - Send Button: Class: {button_class}, Text: '{button_text}', Disabled: {button_disabled}")
+            #button_disabled = 'disabled' in button_class
 
             # Get the class attribute
             button_class = await send_button.get_attribute('class')
 
             # Check if button is disabled
-            if 'disabled' in button_class:
-                raise Exception("Send code button is disabled - retrying...")
-
             # If not disabled, proceed with click
             await send_button.click()
 
             await asyncio.sleep(2)
-
 
             print(f"✓ OTP sent successfully to {phone_number}")
 
@@ -467,13 +476,14 @@ class OTPSender:
                 
                 # Configure driver options
                 options = webdriver.ChromeOptions()
-                # options.add_argument('--no-sandbox')
+                # options.add_argument('--start-maximized')
                 options.add_argument('--disable-dev-shm-usage')
                 options.add_argument('--disable-extensions')
                 options.add_argument('--disable-gpu')
                 options.add_argument('--disable-software-rasterizer')
                 
                 if proxy:
+                    print(f"Using proxy: {proxy}")
                     options.add_argument(f'--proxy-server={proxy}')
                 
                 # Initialize driverless Chrome with context options
