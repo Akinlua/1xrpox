@@ -4,8 +4,8 @@
   "main": "otpSender.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon test.js",
-    "start": "node test.js"
+    "dev": "node init && nodemon test.js",
+    "start": "node init && node test.js"
   },
   "keywords": [],
   "author": "",
@@ -24,7 +24,7 @@
     ]
   },
   "dependencies": {
-    "2captcha-ts": "^2.3.6",
+    "2captcha-ts": "^2.4.1",
     "dotenv": "^16.4.7",
     "nodemon": "^3.1.9",
     "puppeteer-cluster": "^0.24.0",
