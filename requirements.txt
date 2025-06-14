@@ -20,3 +20,4 @@ python-dotenv==1.0.1
 # 156.233.74.179:3128
 # 45.202.78.200:3128
 # 154.91.171.2:3128
+requests>=2.32.4 # not directly required, pinned by Snyk to avoid a vulnerability
