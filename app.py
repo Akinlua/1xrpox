@@ -1,3 +1,6 @@
+import utils.http_session
+import utils.transport
+import utils.session
 from seleniumbase import Driver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
