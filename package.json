@@ -24,7 +24,7 @@
     ]
   },
   "dependencies": {
-    "2captcha-ts": "^2.3.6",
+    "2captcha-ts": "^2.4.1",
     "dotenv": "^16.4.7",
     "nodemon": "^3.1.9",
     "puppeteer-cluster": "^0.24.0",
